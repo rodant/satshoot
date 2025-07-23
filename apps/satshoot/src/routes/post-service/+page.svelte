@@ -137,7 +137,12 @@
             amount = $serviceToEdit.amount;
             pledgeSplit = $serviceToEdit.pledgeSplit;
             sponsoredNpub = serviceToEdit ? $serviceToEdit.sponsoredNpub : PablosNpub;
-            sponsoredPubkey = sponsoredNpub ? nip19.decode(sponsoredNpub).data as string : '';
+            try {
+                sponsoredPubkey = sponsoredNpub ? nip19.decode(sponsoredNpub).data as string : '';
+            } catch (error) {
+                sponsoredPubkey = '';
+                toaster.error({ title: 'Invalid sponsored npub.' });
+            }
             sponsoringSplit = $serviceToEdit?.sponsoringSplit ? $serviceToEdit.sponsoringSplit : 50;
             imageUrls = $serviceToEdit.images;
         }
@@ -168,7 +173,7 @@
                     }
                 } catch (error) {
                     sponsoredPubkey = '';
-                    toaster.error({ title: 'Invalid npub.' });
+                    toaster.error({ title: 'Invalid sponsored npub.' });
                 }
             } else {
                 sponsoredPubkey = '';
