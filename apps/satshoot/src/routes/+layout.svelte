@@ -496,7 +496,7 @@
 
         await $ndk.connect();
 
-        if (!$loggedIn) {
+        if (!$loggedIn && $loginMethod) {
             showMnemonicSeedInputModal = true;
         }
     });
