@@ -96,6 +96,8 @@
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
+    import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -104,6 +106,7 @@
     let { children }: Props = $props();
 
     let showDecryptSecretModal = $state(false);
+    let showMnemonicSeedInputModal = $state(false);
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
@@ -155,7 +158,13 @@
         }
     });
 
-    async function restoreLogin() {
+    function generateBip39Seed(seedWords: string[]): void {
+        const bip39seed = deriveSeedKey(seedWords.join(' '));
+        restoreLogin(bip39seed);
+    }
+
+    async function restoreLogin(bip39seed?: Uint8Array) {
+        console.log('logging in user');
         // For UI feedback
         $loggingIn = true;
         await tick();
@@ -167,28 +176,32 @@
 
         switch ($loginMethod) {
             case LoginMethod.Local:
-                await handleLocalLogin();
+                await handleLocalLogin(bip39seed);
                 break;
             case LoginMethod.Bunker:
-                await handleBunkerLogin();
+                await handleBunkerLogin(bip39seed);
                 break;
             case LoginMethod.Nip07:
-                await handleNip07Login();
+                await handleNip07Login(bip39seed);
                 break;
             case LoginMethod.NostrConnect:
-                await handleNostrConnectLogin();
+                await handleNostrConnectLogin(bip39seed);
                 break;
         }
+
+        console.log('Session initialized!');
+
+        sessionInitialized.set(true);
     }
 
-    async function handleLocalLogin() {
+    async function handleLocalLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         // We either get the private key from sessionStorage or decrypt from localStorage
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
             console.log('Start init session in local key login')
 
-            initializeUser($ndk);
+            initializeUser($ndk, bip39seed);
         } else if (
             localStorage.getItem('nostr-nsec') !== null
         ) {
@@ -247,7 +260,7 @@
         }
     }
 
-    async function handleBunkerLogin() {
+    async function handleBunkerLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
         const bunkerUrl = localStorage.getItem('bunkerUrl');
         const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -280,7 +293,7 @@
                     console.info('Bunker connected! Logging in...');
                     if (returnedUser.npub) {
                         $ndk.signer = remoteSigner;
-                        await initializeUser($ndk);
+                        await initializeUser($ndk, bip39seed);
                         $loggingIn = false;
                     }
                 } catch (e) {
@@ -344,7 +357,7 @@
         });
     }
 
-    async function handleNostrConnectLogin() {
+    async function handleNostrConnectLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         const localSignerKey = localStorage.getItem('nostrConnectLocalSigner');
         const remotePubkey = localStorage.getItem('nostrConnectRemotePubkey');
 
@@ -372,7 +385,7 @@
                 console.log('NostrConnect session restored successfully');
 
                 // Initialize user and complete login
-                await initializeUser($ndk);
+                await initializeUser($ndk, bip39seed);
                 $loggingIn = false;
 
             } else {
@@ -401,10 +414,10 @@
         }
     }
 
-    async function handleNip07Login() {
+    async function handleNip07Login(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
         if (!$ndk.signer) {
             $ndk.signer = new NDKNip07Signer();
-            await initializeUser($ndk);
+            await initializeUser($ndk, bip39seed);
             $loggingIn = false;
         }
     }
@@ -482,12 +495,8 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            console.log('logging in user');
-            await restoreLogin();
+            showMnemonicSeedInputModal = true;
         }
-        console.log('Session initialized!');
-
-        sessionInitialized.set(true);
     });
 
     onDestroy(() => {
@@ -767,7 +776,7 @@
             class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
             aria-label="Main header"
         >
-            <Header onRestoreLogin={restoreLogin} />
+            <Header onRestoreLogin={() => showMnemonicSeedInputModal = true} />
         </header>
     {/if}
 
@@ -814,3 +823,9 @@
 {#if $bidTakenState.showModal && $bidTakenState.jobId}
     <BidTakenModal bind:isOpen={$bidTakenState.showModal} jobId={$bidTakenState.jobId} />
 {/if}
+
+<MnemonicSeedInputModal
+    bind:isOpen={showMnemonicSeedInputModal}
+    onConfirm={generateBip39Seed}
+    onSkip={restoreLogin}
+/>
