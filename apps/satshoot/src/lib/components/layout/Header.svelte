@@ -13,7 +13,7 @@
     import { getRoboHashPicture } from '$lib/utils/helpers';
     import { fetchEventFromRelaysFirst } from '$lib/utils/misc';
     import { filterAndRelaySetFromBech32, NDKKind, NDKRelaySet, NDKSubscriptionCacheUsage, profileFromEvent, type NDKEvent } from '@nostr-dev-kit/ndk';
-    import ndk, { BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
+    import ndk, { nut13SeedStorage, BOOTSTRAPOUTBOXRELAYS, DEFAULTRELAYURLS } from '$lib/stores/session';
     import ProgressRing from '../UI/Display/ProgressRing.svelte';
     import AppMenu from './AppMenu.svelte';
     import Input from '../UI/Inputs/input.svelte';
@@ -24,6 +24,8 @@
     import { idFromNaddr, isFreelanceJobOrServiceURI, isNpubOrNprofile, getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
     import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
+    import MnemonicSeedInputModal from '../Modals/MnemonicSeedInputModal.svelte';
+    import { deriveSeedKey } from '$lib/wallet/nut-13';
 
     interface Props {
         onRestoreLogin: () => void;
@@ -31,6 +33,7 @@
 
     let { onRestoreLogin }: Props = $props();
 
+    let showMnemonicSeedInputModal = $state(false);
     let showLoginModal = $state(false);
     let showLogoutModal = $state(false);
     let showAppMenu = $state(false);
@@ -335,7 +338,10 @@
         }
     };
 
-    function handleLogin() {
+    function handleLogin(mnemonicSeed?: string[]) {
+        if (mnemonicSeed) {
+            $nut13SeedStorage = deriveSeedKey(mnemonicSeed.join(" "));
+        }
         showLoginModal = true;
     }
 
@@ -492,7 +498,7 @@
                             {:else if $loginMethod === 'local'}
                                 <Button onClick={onRestoreLogin}>Login</Button>
                             {:else}
-                                <Button onClick={handleLogin}>Login</Button>
+                                <Button onClick={() => showMnemonicSeedInputModal = true}>Login</Button>
                             {/if}
                         </div>
                     {:else}
@@ -596,5 +602,6 @@
 
 <AppMenu bind:isOpen={showAppMenu} />
 
+<MnemonicSeedInputModal bind:isOpen={showMnemonicSeedInputModal} onConfirm={handleLogin} onSkip={handleLogin} />
 <LoginModal bind:isOpen={showLoginModal} />
 <LogoutModal bind:isOpen={showLogoutModal} />

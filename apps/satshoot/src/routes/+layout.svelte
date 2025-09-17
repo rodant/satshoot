@@ -8,6 +8,7 @@
     import '@fortawesome/fontawesome-free/css/solid.css';
 
     import ndk, {
+        nut13SeedStorage,
         bunkerNDK,
         bunkerRelayConnected,
         sessionInitialized,
@@ -96,8 +97,6 @@
     import BidTakenModal from '$lib/components/Modals/BidTakenModal.svelte';
     import type { ServiceEvent } from '$lib/events/ServiceEvent';
     import { OrderStatus, type OrderEvent } from '$lib/events/OrderEvent';
-    import { deriveSeedKey } from '$lib/wallet/nut-13';
-    import MnemonicSeedInputModal from '$lib/components/Modals/MnemonicSeedInputModal.svelte';
 
     interface Props {
         children?: import('svelte').Snippet;
@@ -106,8 +105,6 @@
     let { children }: Props = $props();
 
     let showDecryptSecretModal = $state(false);
-    let showMnemonicSeedInputModal = $state(false);
-    let bip39seedS = $state<Uint8Array>();
 
     const displayNav = $derived($loggedIn);
     const hideBottomNav = $derived(
@@ -159,11 +156,6 @@
         }
     });
 
-    function generateBip39Seed(seedWords: string[]): void {
-        const bip39seed = deriveSeedKey(seedWords.join(' '));
-        restoreLogin(bip39seed);
-    }
-
     async function restoreLogin(bip39seed?: Uint8Array) {
         console.log('logging in user');
         // For UI feedback
@@ -189,10 +181,6 @@
                 await handleNostrConnectLogin(bip39seed);
                 break;
         }
-
-        console.log('Session initialized!');
-
-        sessionInitialized.set(true);
     }
 
     async function handleLocalLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
@@ -206,7 +194,6 @@
         } else if (
             localStorage.getItem('nostr-nsec') !== null
         ) {
-            bip39seedS = bip39seed;
             showDecryptSecretModal = true;
         }
     }
@@ -245,7 +232,7 @@
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
         $sessionPK = privateKey;
 
-        initializeUser($ndk, bip39seedS);
+        initializeUser($ndk, $nut13SeedStorage);
     }
 
     function getPrivateKeyFromDecryptedSecret(
@@ -496,9 +483,13 @@
 
         await $ndk.connect();
 
-        if (!$loggedIn && $loginMethod) {
-            showMnemonicSeedInputModal = true;
+        if (!$loggedIn) {
+            await restoreLogin($nut13SeedStorage);
         }
+
+        console.log('Session initialized!');
+
+        sessionInitialized.set(true);
     });
 
     onDestroy(() => {
@@ -778,7 +769,7 @@
             class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
             aria-label="Main header"
         >
-            <Header onRestoreLogin={() => showMnemonicSeedInputModal = true} />
+            <Header onRestoreLogin={() => restoreLogin($nut13SeedStorage)} />
         </header>
     {/if}
 
@@ -825,9 +816,3 @@
 {#if $bidTakenState.showModal && $bidTakenState.jobId}
     <BidTakenModal bind:isOpen={$bidTakenState.showModal} jobId={$bidTakenState.jobId} />
 {/if}
-
-<MnemonicSeedInputModal
-    bind:isOpen={showMnemonicSeedInputModal}
-    onConfirm={generateBip39Seed}
-    onSkip={restoreLogin}
-/>
