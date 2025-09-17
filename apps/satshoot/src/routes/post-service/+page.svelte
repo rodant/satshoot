@@ -17,7 +17,7 @@
     import { redirectAfterLogin } from '$lib/stores/gui';
     import { servicePostSuccessState } from '$lib/stores/modals';
     import { serviceToEdit } from '$lib/stores/service-to-edit';
-    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
+    import ndk, { LoginMethod, nut13SeedStorage, sessionPK } from '$lib/stores/session';
     import { toaster } from '$lib/stores/toaster';
     import currentUser, {
         loggedIn,
@@ -472,7 +472,7 @@
             broadcastUserProfile($ndk, user);
 
             // initialize user
-            initializeUser($ndk);
+            initializeUser($ndk, $nut13SeedStorage);
 
             toaster.success({
                 title: 'Nostr Keypair Created!',

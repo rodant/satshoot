@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ndk, { LoginMethod, sessionPK } from '$lib/stores/session';
+    import ndk, { LoginMethod, nut13SeedStorage, sessionPK } from '$lib/stores/session';
     import currentUser, {
         loggedIn,
         loginMethod,
@@ -287,7 +287,7 @@
             broadcastUserProfile($ndk, user);
 
             // initialize user
-            initializeUser($ndk);
+            initializeUser($ndk, $nut13SeedStorage);
 
             toaster.success({
                 title: 'Nostr Keypair Created!',
