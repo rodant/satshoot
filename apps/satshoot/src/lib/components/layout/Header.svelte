@@ -26,6 +26,8 @@
     import { nip19 } from 'nostr-tools';
     import MnemonicSeedInputModal from '../Modals/MnemonicSeedInputModal.svelte';
     import { deriveSeedKey } from '$lib/wallet/nut-13';
+    import { encryptSecret } from '$lib/utils/crypto';
+    import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
 
     interface Props {
         onRestoreLogin: () => void;
@@ -338,10 +340,16 @@
         }
     };
 
-    function handleLogin(mnemonicSeed?: string[]) {
-        if (mnemonicSeed) {
-            $nut13SeedStorage = deriveSeedKey(mnemonicSeed.join(" "));
+    function handleLogin() {
+        if (!$nut13SeedStorage) {
+            showMnemonicSeedInputModal = true;
+            return;
         }
+        showLoginModal = true;
+    }
+
+    function handleMnemonicSeedInput(mnemonicSeed: string[]) {
+        $nut13SeedStorage = deriveSeedKey(mnemonicSeed.join(" "));
         showLoginModal = true;
     }
 
@@ -498,7 +506,7 @@
                             {:else if $loginMethod === 'local'}
                                 <Button onClick={onRestoreLogin}>Login</Button>
                             {:else}
-                                <Button onClick={() => showMnemonicSeedInputModal = true}>Login</Button>
+                                <Button onClick={handleLogin}>Login</Button>
                             {/if}
                         </div>
                     {:else}
@@ -602,6 +610,6 @@
 
 <AppMenu bind:isOpen={showAppMenu} />
 
-<MnemonicSeedInputModal bind:isOpen={showMnemonicSeedInputModal} onConfirm={handleLogin} onSkip={handleLogin} />
+<MnemonicSeedInputModal bind:isOpen={showMnemonicSeedInputModal} onConfirm={handleMnemonicSeedInput} onSkip={() => showLoginModal = true} />
 <LoginModal bind:isOpen={showLoginModal} />
 <LogoutModal bind:isOpen={showLogoutModal} />
