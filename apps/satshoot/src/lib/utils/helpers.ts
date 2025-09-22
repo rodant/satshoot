@@ -17,6 +17,7 @@ import ndk, {
     blastrUrl,
     BOOTSTRAPOUTBOXRELAYS,
     DEFAULTRELAYURLS,
+    nut13SeedStorage,
     sessionPK,
 } from '$lib/stores/session';
 import type NDKSvelte from '@nostr-dev-kit/ndk-svelte';
@@ -203,6 +204,8 @@ export function logout() {
     sessionStorage.clear();
 
     sessionPK.set('');
+
+    nut13SeedStorage.set(undefined);
 
     seenIDs.set(new Set());
 
