@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { redirectAfterLogin } from '$lib/stores/gui';
-    import ndk, { nut13SeedStorage, bunkerNDK, DEFAULTRELAYURLS, LoginMethod } from '$lib/stores/session';
+    import ndk, { bunkerNDK, DEFAULTRELAYURLS, LoginMethod } from '$lib/stores/session';
     import { loginMethod, UserMode, userMode } from '$lib/stores/user';
     import { initializeUser } from '$lib/utils/helpers';
     import { parseRelaysFromBunkerUrl, parseRemotePubkeyFromBunkerUrl } from '$lib/utils/login';
@@ -128,7 +128,7 @@
                     title: 'Bunker Connection Successful!',
                 });
 
-                initializeUser($ndk, $nut13SeedStorage);
+                initializeUser($ndk);
                 handleRedirection();
 
                 isOpen = false;
@@ -204,7 +204,7 @@
                     title: 'NostrConnect connection successful!',
                 });
 
-                initializeUser($ndk, $nut13SeedStorage);
+                initializeUser($ndk);
                 handleRedirection();
 
                 isOpen = false;

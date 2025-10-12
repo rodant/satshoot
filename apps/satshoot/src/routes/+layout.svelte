@@ -8,7 +8,6 @@
     import '@fortawesome/fontawesome-free/css/solid.css';
 
     import ndk, {
-        nut13SeedStorage,
         bunkerNDK,
         bunkerRelayConnected,
         sessionInitialized,
@@ -156,7 +155,7 @@
         }
     });
 
-    async function restoreLogin(bip39seed?: Uint8Array) {
+    async function restoreLogin() {
         console.log('logging in user');
         // For UI feedback
         $loggingIn = true;
@@ -169,28 +168,28 @@
 
         switch ($loginMethod) {
             case LoginMethod.Local:
-                await handleLocalLogin(bip39seed);
+                await handleLocalLogin();
                 break;
             case LoginMethod.Bunker:
-                await handleBunkerLogin(bip39seed);
+                await handleBunkerLogin();
                 break;
             case LoginMethod.Nip07:
-                await handleNip07Login(bip39seed);
+                await handleNip07Login();
                 break;
             case LoginMethod.NostrConnect:
-                await handleNostrConnectLogin(bip39seed);
+                await handleNostrConnectLogin();
                 break;
         }
     }
 
-    async function handleLocalLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
+    async function handleLocalLogin() {
         // We either get the private key from sessionStorage or decrypt from localStorage
         if ($sessionPK) {
             $ndk.signer = new NDKPrivateKeySigner($sessionPK);
             $loggingIn = false;
             console.log('Start init session in local key login')
 
-            initializeUser($ndk, bip39seed);
+            initializeUser($ndk);
         } else if (
             localStorage.getItem('nostr-nsec') !== null
         ) {
@@ -236,7 +235,7 @@
         $ndk.signer = new NDKPrivateKeySigner(privateKey);
         $sessionPK = privateKey;
 
-        initializeUser($ndk, $nut13SeedStorage);
+        initializeUser($ndk);
     }
 
     function getPrivateKeyFromDecryptedSecret(
@@ -253,7 +252,7 @@
         }
     }
 
-    async function handleBunkerLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
+    async function handleBunkerLogin() {
         const localBunkerKey = localStorage.getItem('bunkerLocalSignerPK');
         const bunkerUrl = localStorage.getItem('bunkerUrl');
         const bunkerRelayURLsString = localStorage.getItem('bunkerRelayURLs');
@@ -286,7 +285,7 @@
                     console.info('Bunker connected! Logging in...');
                     if (returnedUser.npub) {
                         $ndk.signer = remoteSigner;
-                        await initializeUser($ndk, bip39seed);
+                        await initializeUser($ndk);
                         $loggingIn = false;
                     }
                 } catch (e) {
@@ -350,7 +349,7 @@
         });
     }
 
-    async function handleNostrConnectLogin(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
+    async function handleNostrConnectLogin() {
         const localSignerKey = localStorage.getItem('nostrConnectLocalSigner');
         const remotePubkey = localStorage.getItem('nostrConnectRemotePubkey');
 
@@ -378,7 +377,7 @@
                 console.log('NostrConnect session restored successfully');
 
                 // Initialize user and complete login
-                await initializeUser($ndk, bip39seed);
+                await initializeUser($ndk);
                 $loggingIn = false;
 
             } else {
@@ -407,10 +406,10 @@
         }
     }
 
-    async function handleNip07Login(bip39seed?: Uint8Array<ArrayBufferLike> | undefined) {
+    async function handleNip07Login() {
         if (!$ndk.signer) {
             $ndk.signer = new NDKNip07Signer();
-            await initializeUser($ndk, bip39seed);
+            await initializeUser($ndk);
             $loggingIn = false;
         }
     }
@@ -488,7 +487,7 @@
         await $ndk.connect();
 
         if (!$loggedIn) {
-            await restoreLogin($nut13SeedStorage);
+            await restoreLogin();
         }
 
         console.log('Session initialized!');
@@ -773,7 +772,7 @@
             class="fixed top-0 left-0 right-0 z-10 bg-white dark:bg-brightGray"
             aria-label="Main header"
         >
-            <Header onRestoreLogin={() => restoreLogin($nut13SeedStorage)} />
+            <Header onRestoreLogin={restoreLogin} />
         </header>
     {/if}
 
