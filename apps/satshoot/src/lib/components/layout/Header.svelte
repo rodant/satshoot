@@ -24,11 +24,7 @@
     import { idFromNaddr, isFreelanceJobOrServiceURI, isNpubOrNprofile, getPubkeyFromNpubOrNprofile } from '$lib/utils/nip19';
     import type { NDKUserProfile } from '@nostr-dev-kit/ndk';
     import { nip19 } from 'nostr-tools';
-    import MnemonicSeedInputModal from '../Modals/MnemonicSeedInputModal.svelte';
-    import { deriveSeedKey } from '$lib/wallet/nut-13';
-    import { encryptSecret } from '$lib/utils/crypto';
-    import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
-
+    
     interface Props {
         onRestoreLogin: () => void;
     }
